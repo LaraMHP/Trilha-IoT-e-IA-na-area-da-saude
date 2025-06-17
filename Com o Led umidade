@@ -1,0 +1,164 @@
+#define BLYNK_TEMPLATE_ID "TMPL2xiwvMV3J"
+#define BLYNK_TEMPLATE_NAME "Trilha IoT e IA na área da saúde"
+#define BLYNK_AUTH_TOKEN "xtJFA0UlEtpSY7uy9xfh7IFHuAYF2Pwg"
+
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <BlynkSimpleEsp32.h>
+#include <DHT.h>
+#include <math.h>
+
+// === Credenciais WiFi ===
+char ssid[] = "Convidado iot";
+char pass[] = "mescla@1417";
+char auth[] = BLYNK_AUTH_TOKEN;
+
+// === Pinos ===
+#define DHT_SENSOR_PIN 4
+#define DHT_SENSOR_TYPE DHT11
+#define LDR_PIN 34
+#define SOM_PIN 35
+#define LED_GREEN 22
+#define LED_RED 23
+#define LED_YELLOW 19
+#define LED_UMIDADE 11   // LED para umidade
+
+// === Limiares ===
+#define TEMP_LIMITE_BAIXO 20
+#define TEMP_LIMITE_ALTO 28
+#define LDR_LIMITE 3000
+#define SOM_LIMITE_DB 80
+#define UMIDADE_LIMITE_BAIXO 40
+#define UMIDADE_LIMITE_ALTO 60
+
+// === Objetos ===
+DHT dht(DHT_SENSOR_PIN, DHT_SENSOR_TYPE);
+BlynkTimer timer;
+
+bool umidadeAlertaAtivo = false;
+unsigned long lastBlinkTime = 0;
+const unsigned long blinkInterval = 500;  // intervalo de 500 ms
+bool ledEstado = false;
+
+void setup() {
+  Serial.begin(9600);
+  dht.begin();
+
+  pinMode(LED_GREEN, OUTPUT);
+  pinMode(LED_RED, OUTPUT);
+  pinMode(LED_YELLOW, OUTPUT);
+  pinMode(LED_UMIDADE, OUTPUT);
+  pinMode(SOM_PIN, INPUT);
+
+  Blynk.begin(auth, ssid, pass);
+  timer.setInterval(1000L, lerSensores);
+}
+
+void loop() {
+  Blynk.run();
+  timer.run();
+
+  // Controle do blink do LED de umidade
+  if (umidadeAlertaAtivo) {
+    unsigned long currentMillis = millis();
+    if (currentMillis - lastBlinkTime >= blinkInterval) {
+      ledEstado = !ledEstado;
+      digitalWrite(LED_UMIDADE, ledEstado ? HIGH : LOW);
+      lastBlinkTime = currentMillis;
+    }
+  } else {
+    digitalWrite(LED_UMIDADE, LOW); // LED desligado quando alerta não ativo
+  }
+}
+
+void lerSensores() {
+  float temperatura = dht.readTemperature();
+  float umidade = dht.readHumidity();
+  int ldrValue = analogRead(LDR_PIN);
+  int somValue = analogRead(SOM_PIN);
+  float tensaoSom = somValue * (3.3 / 4095.0);
+  float decibeis = (tensaoSom > 0.01) ? 20 * log10(tensaoSom / 0.00631) : 0;
+
+  // Envio dos valores para o app Blynk
+  Blynk.virtualWrite(V1, temperatura);
+  Blynk.virtualWrite(V2, ldrValue);
+  Blynk.virtualWrite(V6, decibeis);
+  Blynk.virtualWrite(V7, umidade);  // Gauge para umidade
+
+  // === Temperatura ===
+  static bool eventoTemperaturaEnviada = false;
+  bool alertaTemperatura = (temperatura < TEMP_LIMITE_BAIXO) || (temperatura > TEMP_LIMITE_ALTO);
+
+  if (alertaTemperatura) {
+    digitalWrite(LED_GREEN, HIGH);
+    Blynk.virtualWrite(V4, 1);
+    if (!eventoTemperaturaEnviada) {
+      Blynk.logEvent("temperatura", "Temperatura fora do limite recomendado!");
+      eventoTemperaturaEnviada = true;
+    }
+  } else {
+    digitalWrite(LED_GREEN, LOW);
+    Blynk.virtualWrite(V4, 0);
+    eventoTemperaturaEnviada = false;
+  }
+
+  // === Luz ===
+  static bool eventoLuzEnviado = false;
+  bool alertaIluminacao = ldrValue >= LDR_LIMITE;
+
+  if (alertaIluminacao) {
+    digitalWrite(LED_YELLOW, HIGH);
+    Blynk.virtualWrite(V5, 255);
+    if (!eventoLuzEnviado) {
+      Blynk.logEvent("iluminosidade", "Muita luz detectada!");
+      eventoLuzEnviado = true;
+    }
+  } else {
+    digitalWrite(LED_YELLOW, LOW);
+    Blynk.virtualWrite(V5, 0);
+    eventoLuzEnviado = false;
+  }
+
+  // === Som ===
+  static bool eventoSomEnviado = false;
+  bool alertaSom = decibeis >= SOM_LIMITE_DB;
+
+  if (alertaSom) {
+    digitalWrite(LED_RED, HIGH);
+    Blynk.virtualWrite(V3, 1);
+    if (!eventoSomEnviado) {
+      Blynk.logEvent("som", "Ruído alto detectado!");
+      eventoSomEnviado = true;
+    }
+  } else {
+    digitalWrite(LED_RED, LOW);
+    Blynk.virtualWrite(V3, 0);
+    eventoSomEnviado = false;
+  }
+
+  // === Umidade ===
+  if (umidade < UMIDADE_LIMITE_BAIXO || umidade > UMIDADE_LIMITE_ALTO) {
+    if (!umidadeAlertaAtivo) {
+      umidadeAlertaAtivo = true;
+      Blynk.virtualWrite(V8, 1); // alerta ligado
+    }
+  } else {
+    if (umidadeAlertaAtivo) {
+      umidadeAlertaAtivo = false;
+      Blynk.virtualWrite(V8, 0); // alerta desligado
+      digitalWrite(LED_UMIDADE, LOW); // garante LED desligado
+    }
+  }
+
+  // Monitor Serial
+  Serial.print("Temp: ");
+  Serial.print(temperatura);
+  Serial.print(" °C | Umid: ");
+  Serial.print(umidade);
+  Serial.print(" % | LDR: ");
+  Serial.print(ldrValue);
+  Serial.print(" | Som: ");
+  Serial.print(somValue);
+  Serial.print(" | dB: ");
+  Serial.println(decibeis);
+}
