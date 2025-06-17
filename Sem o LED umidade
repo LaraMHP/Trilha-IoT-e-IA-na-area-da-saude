@@ -26,7 +26,7 @@ char auth[] = BLYNK_AUTH_TOKEN;
 // === Limiares ===
 #define TEMP_LIMITE_BAIXO 20
 #define TEMP_LIMITE_ALTO 28
-#define LDR_LIMITE 2000
+#define LDR_LIMITE 3000
 #define SOM_LIMITE_DB 80
 #define UMIDADE_LIMITE_BAIXO 40
 #define UMIDADE_LIMITE_ALTO 60
