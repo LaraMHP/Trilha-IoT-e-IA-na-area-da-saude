@@ -21,7 +21,7 @@ char auth[] = BLYNK_AUTH_TOKEN;
 #define LED_GREEN 22
 #define LED_RED 23
 #define LED_YELLOW 19
-#define LED_UMIDADE 11   // LED para umidade
+#define LED_WHITE 11   // LED para umidade
 
 // === Limiares ===
 #define TEMP_LIMITE_BAIXO 20
@@ -47,7 +47,7 @@ void setup() {
   pinMode(LED_GREEN, OUTPUT);
   pinMode(LED_RED, OUTPUT);
   pinMode(LED_YELLOW, OUTPUT);
-  pinMode(LED_UMIDADE, OUTPUT);
+  pinMode(LED_WHITE, OUTPUT);
   pinMode(SOM_PIN, INPUT);
 
   Blynk.begin(auth, ssid, pass);
@@ -67,7 +67,7 @@ void loop() {
       lastBlinkTime = currentMillis;
     }
   } else {
-    digitalWrite(LED_UMIDADE, LOW); // LED desligado quando alerta não ativo
+    digitalWrite(LED_WHITE, LOW); // LED desligado quando alerta não ativo
   }
 }
 
@@ -146,7 +146,7 @@ void lerSensores() {
     if (umidadeAlertaAtivo) {
       umidadeAlertaAtivo = false;
       Blynk.virtualWrite(V8, 0); // alerta desligado
-      digitalWrite(LED_UMIDADE, LOW); // garante LED desligado
+      digitalWrite(LED_WHITE, LOW); // garante LED desligado
     }
   }
 
