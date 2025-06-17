@@ -21,7 +21,7 @@ char auth[] = BLYNK_AUTH_TOKEN;
 #define LED_GREEN 22    // Temperatura
 #define LED_RED 23      // Som
 #define LED_YELLOW 19   // Luz
-#define LED_UMIDADE 11  // Umidade
+#define LED_WHITE 11  // Umidade
 
 // === Limiares ===
 #define TEMP_LIMITE_MIN 20
@@ -48,7 +48,7 @@ void setup() {
   pinMode(LED_GREEN, OUTPUT);
   pinMode(LED_RED, OUTPUT);
   pinMode(LED_YELLOW, OUTPUT);
-  pinMode(LED_UMIDADE, OUTPUT);
+  pinMode(LED_WHITE, OUTPUT);
 
   Blynk.begin(auth, ssid, pass);
   timer.setInterval(1000L, lerSensores);
@@ -111,7 +111,7 @@ void lerSensores() {
 
   // === Umidade ===
   bool alertaUmidade = (umidade < UMIDADE_LIMITE_MIN) || (umidade > UMIDADE_LIMITE_MAX);
-  digitalWrite(LED_UMIDADE, alertaUmidade ? HIGH : LOW);
+  digitalWrite(LED_WHITE, alertaUmidade ? HIGH : LOW);
   Blynk.virtualWrite(V8, alertaUmidade ? 1 : 0);
   if (alertaUmidade && !alertaUmidadeEnviado) {
     Blynk.logEvent("umidade", "Umidade fora do intervalo ideal!");
