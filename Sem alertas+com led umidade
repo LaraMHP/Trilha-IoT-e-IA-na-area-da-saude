@@ -21,7 +21,7 @@ char auth[] = BLYNK_AUTH_TOKEN;
 #define LED_GREEN 22    // Temperatura
 #define LED_RED 23      // Som
 #define LED_YELLOW 19   // Luz
-#define LED_UMIDADE 11  // Umidade
+#define LED_UMIDADE 5  // Umidade
 
 // === Limiares ===
 #define TEMP_LIMITE_MIN 20
@@ -36,7 +36,7 @@ DHT dht(DHT_SENSOR_PIN, DHT_SENSOR_TYPE);
 BlynkTimer timer;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   dht.begin();
 
   pinMode(LED_GREEN, OUTPUT);
