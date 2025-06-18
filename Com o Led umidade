@@ -21,7 +21,7 @@ char auth[] = BLYNK_AUTH_TOKEN;
 #define LED_GREEN 22
 #define LED_RED 23
 #define LED_YELLOW 19
-#define LED_WHITE 11   // LED para umidade
+#define LED_WHITE 5   // LED para umidade
 
 // === Limiares ===
 #define TEMP_LIMITE_BAIXO 20
